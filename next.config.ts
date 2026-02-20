@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   // We'll leave experimental empty to stop the TS errors 
   // since you are forcing Webpack via the terminal command anyway
   experimental: {}, 
+  turbopack: {},  
 };
 
 export default withPWA(nextConfig);

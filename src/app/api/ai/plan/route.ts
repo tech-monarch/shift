@@ -9,23 +9,32 @@ export async function POST(req: Request) {
   try {
     const { messages }: { messages: Message[] } = await req.json();
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }); // or 'gemini-2.0-flash'
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('GEMINI_API_KEY is not set');
+      return Response.json({ error: 'Server configuration error' }, { status: 500 });
+    }
 
-    // Format history for Gemini
-    const history = messages.slice(0, -1).map((m: Message) => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }],
-    }));
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const chat = model.startChat({ history });
-    const lastMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessage(lastMessage);
-    const response = await result.response.text();
+    // Build a single prompt with conversation history
+    let prompt = '';
+    for (const msg of messages) {
+      prompt += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n`;
+    }
+    prompt += 'Assistant:';
+
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
 
     return Response.json({ response });
-  } catch (error) {
-    console.error('AI Planner error:', error);
-    return Response.json({ error: 'Failed to generate response' }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('AI Planner error:', errorMessage);
+    return Response.json(
+      { error: 'Failed to generate response: ' + errorMessage },
+      { status: 500 }
+    );
   }
 }

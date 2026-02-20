@@ -476,6 +476,29 @@ function ChatArea({
   onUseForContent: () => void;
   onGenerateInitialPlan: () => void;
 }) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
+  // Scroll to bottom on new messages or loading
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [timeline.messages, loading]);
+
+  // Detect scroll to show/hide button
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShowScrollButton(!isNearBottom);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <>
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
@@ -501,7 +524,11 @@ function ChatArea({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-4 relative"
+      >
         {timeline.messages.map((msg, idx) => (
           <div
             key={idx}
@@ -532,7 +559,20 @@ function ChatArea({
             </div>
           </div>
         )}
+        {/* Dummy div to scroll into view */}
+        <div ref={messagesEndRef} />
       </div>
+
+      {/* Scroll to bottom button */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-20 right-8 p-3 bg-blue-600 rounded-full shadow-lg hover:bg-blue-500 transition animate-in fade-in"
+          aria-label="Scroll to bottom"
+        >
+          <ChevronRight size={20} className="rotate-90" />
+        </button>
+      )}
 
       <div className="p-4 border-t border-white/10">
         <div className="flex gap-2">
