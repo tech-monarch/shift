@@ -1,38 +1,40 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { 
-  MessageSquare, Twitter, Linkedin, Copy, RefreshCw, 
-  Check, Instagram, Video, Sparkles, FileText, Clock 
+import {
+  MessageSquare, Twitter, Linkedin, Copy, RefreshCw,
+  Check, Instagram, Video, Sparkles, FileText, Clock
 } from "lucide-react";
 
-type Platform = "x" | "linkedin" | "instagram" | "tiktok" | "devto" | "medium";
-type Tone = "professional" | "casual" | "hype" | "storyteller" | "minimal";
-
-// Define types for localStorage data
-interface TaskItem {
+// ----------------------------------------------------------------------
+// Types for localStorage data
+// ----------------------------------------------------------------------
+interface Task {
   id: string;
   text: string;
   completed: boolean;
 }
 
-interface WeekDataItem {
+interface DayData {
   date: string;
   completed: number;
   total: number;
 }
 
-interface TimelineMessage {
+interface PlannerMessage {
   role: "user" | "assistant";
   content: string;
   timestamp?: number;
 }
 
-interface Timeline {
-  messages?: TimelineMessage[];
+interface PlannerTimeline {
+  id: string;
+  name: string;
+  messages: PlannerMessage[];
+  createdAt: number;
 }
 
 // ----------------------------------------------------------------------
-// Helper: gather context from localStorage
+// Helper: build context string from localStorage
 // ----------------------------------------------------------------------
 const buildContextFromStorage = (): string => {
   const today = new Date().toISOString().split("T")[0];
@@ -41,61 +43,59 @@ const buildContextFromStorage = (): string => {
   const weekData = localStorage.getItem("weekData");
   const plannerTimelines = localStorage.getItem("planner_timelines");
 
-  let context = `You have a streak of ${streak} days. `;
+  const parts: string[] = [];
+
+  // Streak
+  parts.push(`You have a streak of ${streak} days.`);
 
   // Today's tasks
   if (tasksToday) {
     try {
-      const tasks: TaskItem[] = JSON.parse(tasksToday);
-      const completed = tasks.filter((t) => t.completed).length;
+      const tasks: Task[] = JSON.parse(tasksToday);
+      const completed = tasks.filter(t => t.completed).length;
       const total = tasks.length;
-      context += `Today you completed ${completed} out of ${total} tasks: `;
-      context += tasks.map((t) => t.text).join(", ");
-      context += ". ";
-    } catch (e) {
-      console.error("Failed to parse tasks", e);
-    }
+      const taskTexts = tasks.map(t => t.text).join(", ");
+      parts.push(`Today you completed ${completed} out of ${total} tasks: ${taskTexts}.`);
+    } catch { /* ignore parse errors */ }
   }
 
-  // Week data summary
+  // Week data
   if (weekData) {
     try {
-      const week: WeekDataItem[] = JSON.parse(weekData);
+      const week: DayData[] = JSON.parse(weekData);
       const totalCompleted = week.reduce((acc, d) => acc + d.completed, 0);
       const totalTasks = week.reduce((acc, d) => acc + d.total, 0);
       const avg = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
-      context += `Over the last 7 days, you completed ${totalCompleted} out of ${totalTasks} tasks (${avg}% consistency). `;
-    } catch (e) {
-      console.error("Failed to parse weekData", e);
-    }
+      parts.push(`Over the last 7 days, you completed ${totalCompleted} out of ${totalTasks} tasks (${avg}% consistency).`);
+    } catch { /* ignore parse errors */ }
   }
 
-  // Recent planning conversations (last 5 assistant messages)
+  // Recent planning insights (last 5 assistant messages)
   if (plannerTimelines) {
     try {
-      const timelines: Timeline[] = JSON.parse(plannerTimelines);
-      // Flatten all messages from all timelines, sort by timestamp, take last 5 assistant messages
-      const allMessages = timelines.flatMap((t) => t.messages || []);
+      const timelines: PlannerTimeline[] = JSON.parse(plannerTimelines);
+      const allMessages = timelines.flatMap(t => t.messages || []);
       const assistantMessages = allMessages
-        .filter((m) => m.role === "assistant")
+        .filter(m => m.role === "assistant")
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
         .slice(0, 5)
-        .map((m) => m.content)
+        .map(m => m.content)
         .join(" ");
       if (assistantMessages) {
-        context += `Recent planning insights: ${assistantMessages}`;
+        parts.push(`Recent planning insights: ${assistantMessages}`);
       }
-    } catch (e) {
-      console.error("Failed to parse plannerTimelines", e);
-    }
+    } catch { /* ignore parse errors */ }
   }
 
-  return context;
+  return parts.join(" ");
 };
 
 // ----------------------------------------------------------------------
 // Main Component
 // ----------------------------------------------------------------------
+type Platform = "x" | "linkedin" | "instagram" | "tiktok" | "devto" | "medium";
+type Tone = "professional" | "casual" | "hype" | "storyteller" | "minimal";
+
 export default function AIContentPage() {
   const [platform, setPlatform] = useState<Platform>("x");
   const [task, setTask] = useState("");
@@ -107,10 +107,9 @@ export default function AIContentPage() {
   const [nextAutoTime, setNextAutoTime] = useState<number | null>(null);
   const [countdown, setCountdown] = useState("");
 
-  // Load context from localStorage on mount
+  // Load context on mount
   useEffect(() => {
-    const context = buildContextFromStorage();
-    setAutoContext(context);
+    setAutoContext(buildContextFromStorage());
   }, []);
 
   // Auto‑generate every 8 hours
@@ -121,18 +120,17 @@ export default function AIContentPage() {
       const eightHours = 8 * 60 * 60 * 1000;
 
       if (!lastGen || now - parseInt(lastGen) > eightHours) {
-        // Auto‑generate
-        performGeneration(true);
+        generateContent(true); // auto generate using only context
         localStorage.setItem("lastContentGen", now.toString());
       }
       setNextAutoTime((parseInt(lastGen || "0") + eightHours) - now);
     };
 
     checkAndGenerate();
-    const interval = setInterval(checkAndGenerate, 60 * 1000); // check every minute
+    const interval = setInterval(checkAndGenerate, 60 * 1000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // We intentionally omit performGeneration because it's stable (uses state setters)
+  }, []); // generateContent is stable enough
 
   // Update countdown display
   useEffect(() => {
@@ -151,10 +149,14 @@ export default function AIContentPage() {
     return () => clearInterval(timer);
   }, [nextAutoTime]);
 
-  const performGeneration = async (useAutoContext = false) => {
-    const promptText = useAutoContext && !task.trim() ? autoContext : task;
+  // Generate content (isAuto = true for timer‑triggered)
+  const generateContent = async (isAuto = false) => {
+    const promptText = isAuto
+      ? autoContext
+      : (task.trim() ? task + "\n\nContext:\n" + autoContext : autoContext);
+
     if (!promptText.trim()) {
-      alert("Please describe your task or achievement, or wait for auto‑context.");
+      alert("No context available. Please complete some tasks first.");
       return;
     }
 
@@ -205,7 +207,6 @@ export default function AIContentPage() {
     medium: "Medium",
   };
 
-  // Platform-specific notices
   const getPlatformNotice = (p: Platform) => {
     switch (p) {
       case "instagram":
@@ -222,7 +223,7 @@ export default function AIContentPage() {
   return (
     <div className="min-h-screen text-white p-4 md:p-6 animate-in fade-in duration-1000 pb-24">
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header with auto‑generation info */}
+        {/* Header with auto‑generation countdown */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-4xl font-black italic tracking-tighter uppercase">AI Content</h1>
@@ -237,13 +238,15 @@ export default function AIContentPage() {
         {/* Platform selector */}
         <div className="flex gap-2 p-1.5 bg-white/5 border border-white/10 rounded-2xl flex-wrap">
           {(Object.keys(platformLabels) as Platform[]).map((p) => (
-            <PlatformButton
+            <button
               key={p}
-              active={platform === p}
               onClick={() => setPlatform(p)}
-              icon={getPlatformIcon(p)}
-              label={platformLabels[p]}
-            />
+              className={`px-4 py-2 rounded-xl flex items-center gap-2 font-bold transition-all ${
+                platform === p ? "bg-blue-600 text-white" : "text-gray-500 hover:text-white"
+              }`}
+            >
+              {getPlatformIcon(p)} {platformLabels[p]}
+            </button>
           ))}
         </div>
 
@@ -254,19 +257,21 @@ export default function AIContentPage() {
           </div>
         )}
 
-        {/* Task input – can be left empty to use auto context */}
+        {/* User input – combined with context */}
         <div className="space-y-2">
           <label className="text-sm font-bold uppercase tracking-widest text-gray-400">
-            What did you accomplish? <span className="text-gray-500 font-normal">(leave empty to use your actual data)</span>
+            Your custom instructions <span className="text-gray-500 font-normal">(optional – we wll combine with your actual data)</span>
           </label>
           <textarea
             value={task}
             onChange={(e) => setTask(e.target.value)}
-            placeholder="e.g., I completed my daily Lock-In task: 'Write 500 words' for 14 days straight."
+            placeholder="e.g., Make it funny, focus on the technical challenge, or leave empty to use only your actual progress."
             className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-lg focus:outline-none focus:border-blue-500 min-h-30"
           />
-          {!task && autoContext && (
-            <p className="text-xs text-gray-500 italic">Using your actual data: {autoContext.substring(0, 100)}…</p>
+          {autoContext && (
+            <p className="text-xs text-gray-500 italic">
+              Context that will be added: {autoContext.substring(0, 150)}…
+            </p>
           )}
         </div>
 
@@ -274,18 +279,24 @@ export default function AIContentPage() {
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-sm font-bold uppercase tracking-widest text-gray-400">Tone:</span>
           <div className="flex gap-2 flex-wrap">
-            <ToneButton active={tone === "professional"} onClick={() => setTone("professional")} label="Professional" />
-            <ToneButton active={tone === "casual"} onClick={() => setTone("casual")} label="Casual" />
-            <ToneButton active={tone === "hype"} onClick={() => setTone("hype")} label="Hype" />
-            <ToneButton active={tone === "storyteller"} onClick={() => setTone("storyteller")} label="Storyteller" />
-            <ToneButton active={tone === "minimal"} onClick={() => setTone("minimal")} label="Minimal" />
+            {(["professional", "casual", "hype", "storyteller", "minimal"] as Tone[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTone(t)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                  tone === t ? "bg-blue-600 text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Generate button */}
         <div className="flex gap-4">
           <button
-            onClick={() => performGeneration(false)}
+            onClick={() => generateContent(false)}
             disabled={loading}
             className="flex-1 py-5 bg-blue-600 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-blue-500 transition disabled:opacity-50"
           >
@@ -297,18 +308,9 @@ export default function AIContentPage() {
             ) : (
               <>
                 <Sparkles size={20} />
-                GENERATE NOW
+                GENERATE CONTENT
               </>
             )}
-          </button>
-          <button
-            onClick={() => performGeneration(true)}
-            disabled={loading}
-            className="py-5 px-6 bg-white/10 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:bg-white/20 transition disabled:opacity-50"
-            title="Use auto context even if you typed something"
-          >
-            <RefreshCw size={20} />
-            AUTO
           </button>
         </div>
 
@@ -330,7 +332,7 @@ export default function AIContentPage() {
                 {copied ? <><Check size={20} /> COPIED</> : <><Copy size={20} /> COPY</>}
               </button>
               <button
-                onClick={() => performGeneration(false)}
+                onClick={() => generateContent(false)}
                 className="py-4 px-6 bg-white/10 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-white/20 transition"
               >
                 <RefreshCw size={20} />
@@ -340,7 +342,7 @@ export default function AIContentPage() {
           </div>
         )}
 
-        {/* Context preview */}
+        {/* Context preview (if no generation yet) */}
         {autoContext && !generatedContent && (
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-sm text-gray-400">
             <p className="font-bold mb-1">Your current context:</p>
@@ -349,32 +351,5 @@ export default function AIContentPage() {
         )}
       </div>
     </div>
-  );
-}
-
-// Helper components
-function PlatformButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-xl flex items-center gap-2 font-bold transition-all ${
-        active ? "bg-blue-600 text-white" : "text-gray-500 hover:text-white"
-      }`}
-    >
-      {icon} {label}
-    </button>
-  );
-}
-
-function ToneButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-        active ? "bg-blue-600 text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
-      }`}
-    >
-      {label}
-    </button>
   );
 }

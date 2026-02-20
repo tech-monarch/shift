@@ -180,7 +180,7 @@ export default function Home() {
                     >
                       Get Shift – It&apos;s Free
                     </button>
-                    <Link href="/login" className="bg-slate-900 text-white px-5 py-2 rounded-full hover:bg-slate-800 transition-all">
+                    <Link href="/dashboard" className="bg-slate-900 text-white px-5 py-2 rounded-full hover:bg-slate-800 transition-all">
                       Get Started
                     </Link>
                   </div>
