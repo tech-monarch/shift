@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   MessageSquare, Twitter, Linkedin, Copy, RefreshCw, 
   Check, Instagram, Video, Sparkles, FileText, Clock 
@@ -7,6 +7,29 @@ import {
 
 type Platform = "x" | "linkedin" | "instagram" | "tiktok" | "devto" | "medium";
 type Tone = "professional" | "casual" | "hype" | "storyteller" | "minimal";
+
+// Define types for localStorage data
+interface TaskItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+interface WeekDataItem {
+  date: string;
+  completed: number;
+  total: number;
+}
+
+interface TimelineMessage {
+  role: "user" | "assistant";
+  content: string;
+  timestamp?: number;
+}
+
+interface Timeline {
+  messages?: TimelineMessage[];
+}
 
 // ----------------------------------------------------------------------
 // Helper: gather context from localStorage
@@ -23,42 +46,48 @@ const buildContextFromStorage = (): string => {
   // Today's tasks
   if (tasksToday) {
     try {
-      const tasks = JSON.parse(tasksToday);
-      const completed = tasks.filter((t: any) => t.completed).length;
+      const tasks: TaskItem[] = JSON.parse(tasksToday);
+      const completed = tasks.filter((t) => t.completed).length;
       const total = tasks.length;
       context += `Today you completed ${completed} out of ${total} tasks: `;
-      context += tasks.map((t: any) => t.text).join(", ");
+      context += tasks.map((t) => t.text).join(", ");
       context += ". ";
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to parse tasks", e);
+    }
   }
 
   // Week data summary
   if (weekData) {
     try {
-      const week = JSON.parse(weekData);
-      const totalCompleted = week.reduce((acc: number, d: any) => acc + d.completed, 0);
-      const totalTasks = week.reduce((acc: number, d: any) => acc + d.total, 0);
+      const week: WeekDataItem[] = JSON.parse(weekData);
+      const totalCompleted = week.reduce((acc, d) => acc + d.completed, 0);
+      const totalTasks = week.reduce((acc, d) => acc + d.total, 0);
       const avg = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
       context += `Over the last 7 days, you completed ${totalCompleted} out of ${totalTasks} tasks (${avg}% consistency). `;
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to parse weekData", e);
+    }
   }
 
   // Recent planning conversations (last 5 assistant messages)
   if (plannerTimelines) {
     try {
-      const timelines = JSON.parse(plannerTimelines);
+      const timelines: Timeline[] = JSON.parse(plannerTimelines);
       // Flatten all messages from all timelines, sort by timestamp, take last 5 assistant messages
-      const allMessages = timelines.flatMap((t: any) => t.messages || []);
+      const allMessages = timelines.flatMap((t) => t.messages || []);
       const assistantMessages = allMessages
-        .filter((m: any) => m.role === "assistant")
-        .sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0))
+        .filter((m) => m.role === "assistant")
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
         .slice(0, 5)
-        .map((m: any) => m.content)
+        .map((m) => m.content)
         .join(" ");
       if (assistantMessages) {
         context += `Recent planning insights: ${assistantMessages}`;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to parse plannerTimelines", e);
+    }
   }
 
   return context;
@@ -82,7 +111,6 @@ export default function AIContentPage() {
   useEffect(() => {
     const context = buildContextFromStorage();
     setAutoContext(context);
-    // Optionally prefill task with context (or leave empty for auto‑use)
   }, []);
 
   // Auto‑generate every 8 hours
@@ -94,7 +122,7 @@ export default function AIContentPage() {
 
       if (!lastGen || now - parseInt(lastGen) > eightHours) {
         // Auto‑generate
-        generateContent(true);
+        performGeneration(true);
         localStorage.setItem("lastContentGen", now.toString());
       }
       setNextAutoTime((parseInt(lastGen || "0") + eightHours) - now);
@@ -103,7 +131,8 @@ export default function AIContentPage() {
     checkAndGenerate();
     const interval = setInterval(checkAndGenerate, 60 * 1000); // check every minute
     return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // We intentionally omit performGeneration because it's stable (uses state setters)
 
   // Update countdown display
   useEffect(() => {
@@ -122,7 +151,7 @@ export default function AIContentPage() {
     return () => clearInterval(timer);
   }, [nextAutoTime]);
 
-  const generateContent = async (useAutoContext = false) => {
+  const performGeneration = async (useAutoContext = false) => {
     const promptText = useAutoContext && !task.trim() ? autoContext : task;
     if (!promptText.trim()) {
       alert("Please describe your task or achievement, or wait for auto‑context.");
@@ -234,7 +263,7 @@ export default function AIContentPage() {
             value={task}
             onChange={(e) => setTask(e.target.value)}
             placeholder="e.g., I completed my daily Lock-In task: 'Write 500 words' for 14 days straight."
-            className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-lg focus:outline-none focus:border-blue-500 min-h-[120px]"
+            className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-lg focus:outline-none focus:border-blue-500 min-h-30"
           />
           {!task && autoContext && (
             <p className="text-xs text-gray-500 italic">Using your actual data: {autoContext.substring(0, 100)}…</p>
@@ -256,7 +285,7 @@ export default function AIContentPage() {
         {/* Generate button */}
         <div className="flex gap-4">
           <button
-            onClick={() => generateContent(false)}
+            onClick={() => performGeneration(false)}
             disabled={loading}
             className="flex-1 py-5 bg-blue-600 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-blue-500 transition disabled:opacity-50"
           >
@@ -273,7 +302,7 @@ export default function AIContentPage() {
             )}
           </button>
           <button
-            onClick={() => generateContent(true)}
+            onClick={() => performGeneration(true)}
             disabled={loading}
             className="py-5 px-6 bg-white/10 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:bg-white/20 transition disabled:opacity-50"
             title="Use auto context even if you typed something"
@@ -301,7 +330,7 @@ export default function AIContentPage() {
                 {copied ? <><Check size={20} /> COPIED</> : <><Copy size={20} /> COPY</>}
               </button>
               <button
-                onClick={() => generateContent(false)}
+                onClick={() => performGeneration(false)}
                 className="py-4 px-6 bg-white/10 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-white/20 transition"
               >
                 <RefreshCw size={20} />
