@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Shift",
-  description: "Shift your perspective",
+  description:
+    "Shift is the execution engine for serious builders. Lock in one non‑negotiable task each day, build an unstoppable streak, and let AI instantly turn your work into posts, articles, and video scripts. Your consistency becomes your content.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
