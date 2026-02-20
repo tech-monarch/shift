@@ -147,7 +147,7 @@ export default function Home() {
 
         {/* --- Main content --- */}
         <div>
-          {/* Hero section with extra floating icons */}
+          {/* Hero section – replaced live demo with hero.png */}
           <section className="relative reveal" style={{ transitionDelay: "0.1s" }}>
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
               <svg className="absolute top-32 left-0 w-96 h-96 text-orange-500/5" viewBox="0 0 200 200" fill="none">
@@ -168,7 +168,7 @@ export default function Home() {
                     </span> Self.
                   </h1>
                   <p className="mt-6 text-xl text-gray-300 max-w-xl">
-                    Shift is the productivity enforcement engine for serious founders. 
+                    Shift is the productivity enforcement engine for founders, Students and Hustlers. 
                     Complete one daily task, and AI turns your execution into 
                     Twitter/X posts, LinkedIn articles, Instagram captions, and 
                     short‑form video scripts.
@@ -189,30 +189,17 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="w-full lg:w-1/2 px-4 mt-12 lg:mt-0">
+                  {/* Replaced live demo panel with hero.png */}
                   <div className="glass-panel p-6 rounded-3xl relative">
                     <div className="absolute -top-3 -right-3 w-16 h-16 bg-orange-500/10 rounded-full blur-xl"></div>
-                    <div className="flex items-center justify-center gap-2 text-orange-400 font-mono text-sm">
-                      <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
-                      LIVE DEMO
-                    </div>
-                    <div className="mt-4 bg-black/40 rounded-xl p-4">
-                      <p className="text-white/70 text-sm">Today&apos;s Lock‑In:</p>
-                      <p className="text-xl font-bold text-white">Ship landing page copy</p>
-                      <div className="mt-3 flex items-center gap-2">
-                        <span className="text-orange-400 font-bold">🔥 12 day streak</span>
-                        <span className="text-white/40">|</span>
-                        <span className="text-white/70">Commitment score 94</span>
-                      </div>
-                      <button className="mt-4 w-full py-3 bg-orange-600 rounded-lg font-medium">
-                        I Executed Today
-                      </button>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/50">
-                      <div className="bg-white/5 p-2 rounded">X post generated</div>
-                      <div className="bg-white/5 p-2 rounded">LinkedIn draft ready</div>
-                      <div className="bg-white/5 p-2 rounded">IG caption copied</div>
-                      <div className="bg-white/5 p-2 rounded">30s video script</div>
-                    </div>
+                    <Image
+                      src="/images/hero.png"
+                      alt="Shift dashboard on mobile"
+                      width={400}
+                      height={800}
+                      className="rounded-xl w-full h-auto"
+                      priority
+                    />
                   </div>
                 </div>
               </div>
@@ -267,7 +254,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* How it works – with diagonal lines */}
+          {/* How it works – replaced video with ai.png */}
           <section className="relative container px-4 mx-auto max-w-7xl mt-32 reveal delay-2" id="how">
             <div className="absolute inset-0 pointer-events-none" style={{
               backgroundImage: 'repeating-linear-gradient(45deg, rgba(249,115,22,0.02) 0px, rgba(249,115,22,0.02) 20px, transparent 20px, transparent 40px)'
@@ -312,9 +299,13 @@ export default function Home() {
               </div>
               <div className="glass-panel p-6 rounded-3xl relative">
                 <div className="absolute -top-5 -left-5 w-24 h-24 bg-gradient-to-br from-orange-600/10 to-indigo-600/10 rounded-full blur-2xl"></div>
-                <video autoPlay muted loop playsInline className="rounded-xl">
-                  <source src="/demo-shift.mp4" type="video/mp4" />
-                </video>
+                <Image
+                  src="/images/ai.jpeg"
+                  alt="AI content output example"
+                  width={400}
+                  height={800}
+                  className="rounded-xl w-full h-auto"
+                />
                 <p className="text-center text-sm text-white/50 mt-2">Demo – actual AI output</p>
               </div>
             </div>
@@ -374,7 +365,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Testimonial – with floating quote icon */}
+          {/* Testimonial – updated with personal image and details */}
           <section className="container px-4 mx-auto max-w-4xl mt-32 reveal">
             <div className="glass-panel p-8 rounded-3xl relative">
               <svg className="absolute top-4 left-4 w-12 h-12 text-white/5" fill="currentColor" viewBox="0 0 32 32">
@@ -385,10 +376,16 @@ export default function Home() {
                   “Shift changed how I document my founder journey. I used to spend hours writing threads. Now I just execute, and AI does the rest. My Twitter engagement doubled in two weeks.”
                 </p>
                 <div className="mt-6 flex items-center gap-4">
-                  <Image src="/images/avatar-placeholder.jpg" alt="Avatar" width={48} height={48} className="rounded-full" />
+                  <Image
+                    src="/images/odia.jpg"
+                    alt="Omijeh David Odianonsen (Odia)"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
                   <div>
-                    <p className="font-semibold text-white">Alex Rivera</p>
-                    <p className="text-sm text-gray-400">Founder of BuildFast</p>
+                    <p className="font-semibold text-white">Omijeh David Odianonsen (Odia)</p>
+                    <p className="text-sm text-gray-400">Solo Builder</p>
                   </div>
                 </div>
               </div>
