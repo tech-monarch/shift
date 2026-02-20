@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-// Type for the beforeinstallprompt event (not standard, so we define it)
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
@@ -13,7 +12,6 @@ interface BeforeInstallPromptEvent extends Event {
 export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
-  // --- Client-side effects ---
   useEffect(() => {
     const revealElements = document.querySelectorAll(".reveal");
     if (revealElements.length > 0) {
@@ -69,7 +67,6 @@ export default function Home() {
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
-    // outcome not used further, so we ignore it
   };
 
   return (
@@ -116,7 +113,6 @@ export default function Home() {
           backdrop-filter: blur(8px);
           border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
-        /* Background decorations */
         .bg-arrow-pattern {
           background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L25 15 Z' fill='%23f97316' opacity='0.03'/%3E%3C/svg%3E");
         }
@@ -125,17 +121,22 @@ export default function Home() {
             linear-gradient(90deg, rgba(249, 115, 22, 0.03) 1px, transparent 1px);
           background-size: 40px 40px;
         }
+        .phone-frame {
+          border-radius: 2.5rem;
+          overflow: hidden;
+          box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+        }
       `}</style>
 
       <div className="relative overflow-x-hidden">
-        {/* Global background decorations */}
+        {/* Background decorations */}
         <div className="fixed inset-0 pointer-events-none bg-grid opacity-50"></div>
         <div className="fixed top-0 left-0 w-full h-full pointer-events-none">
           <div className="absolute top-20 left-10 w-64 h-64 bg-orange-600/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 right-10 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl"></div>
         </div>
 
-        {/* --- Navbar --- */}
+        {/* Navbar */}
         <header className="fixed top-4 left-1/2 transform -translate-x-1/2 w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-6xl z-50">
           <div className="island-nav flex items-center justify-between px-4 py-2 md:px-6">
             <div className="w-auto logo">
@@ -161,9 +162,9 @@ export default function Home() {
           </div>
         </header>
 
-        {/* --- Main content --- */}
+        {/* Main content */}
         <div>
-          {/* Hero section */}
+          {/* Hero section with phone-styled screenshot */}
           <section className="relative reveal" style={{ transitionDelay: "0.1s" }}>
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
               <svg className="absolute top-32 left-0 w-96 h-96 text-orange-500/5" viewBox="0 0 200 200" fill="none">
@@ -206,24 +207,28 @@ export default function Home() {
                   </div>
                   <p className="mt-4 text-sm text-gray-400">No credit card. PWA installs in seconds.</p>
                 </div>
+
+                {/* Phone mockup */}
                 <div className="w-full lg:w-1/2 px-4 mt-12 lg:mt-0">
-                  <div className="glass-panel p-6 rounded-3xl relative">
+                  <div className="max-w-xs mx-auto">
                     <div className="absolute -top-3 -right-3 w-16 h-16 bg-orange-500/10 rounded-full blur-xl"></div>
-                    <Image
-                      src="/images/hero.png"
-                      alt="Shift dashboard on mobile"
-                      width={400}
-                      height={800}
-                      className="rounded-xl w-full h-auto"
-                      priority
-                    />
+                    <div className="phone-frame">
+                      <Image
+                        src="/images/hero.png"
+                        alt="Shift dashboard on mobile"
+                        width={400}
+                        height={800}
+                        className="w-full h-auto"
+                        priority
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Features section */}
+          {/* Features section (unchanged) */}
           <section className="relative container px-4 mx-auto max-w-7xl mt-32 reveal delay-2" id="features">
             <div className="absolute inset-0 pointer-events-none bg-arrow-pattern opacity-20"></div>
             <div className="absolute top-20 left-10 w-40 h-40 border border-orange-500/10 rounded-full"></div>
@@ -271,7 +276,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* How it works */}
+          {/* How it works section with phone-styled AI screenshot */}
           <section className="relative container px-4 mx-auto max-w-7xl mt-32 reveal delay-2" id="how">
             <div
               className="absolute inset-0 pointer-events-none"
@@ -330,15 +335,19 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div className="glass-panel p-6 rounded-3xl relative">
+
+              {/* Phone mockup for AI output */}
+              <div className="max-w-xs mx-auto">
                 <div className="absolute -top-5 -left-5 w-24 h-24 bg-gradient-to-br from-orange-600/10 to-indigo-600/10 rounded-full blur-2xl"></div>
-                <Image
-                  src="/images/ai.jpeg"
-                  alt="AI content output example"
-                  width={400}
-                  height={800}
-                  className="rounded-xl w-full h-auto"
-                />
+                <div className="phone-frame">
+                  <Image
+                    src="/images/ai.jpeg"
+                    alt="AI content output example"
+                    width={400}
+                    height={800}
+                    className="w-full h-auto"
+                  />
+                </div>
                 <p className="text-center text-sm text-white/50 mt-2">Demo – actual AI output</p>
               </div>
             </div>
@@ -413,7 +422,7 @@ export default function Home() {
               <div className="relative z-10 pl-8">
                 <p className="text-xl text-white/80 italic">
                   “Shift changed how I document my founder journey. I used to spend hours writing threads. Now I just
-                  execute, and AI does the rest. My Twitter engagement doubled in two weeks!!”
+                  execute, and AI does the rest. My Twitter engagement doubled in two weeks.”
                 </p>
                 <div className="mt-6 flex items-center gap-4">
                   <Image
@@ -461,40 +470,24 @@ export default function Home() {
               <div className="w-full md:w-auto">
                 <h4 className="text-white font-semibold mb-4">Product</h4>
                 <ul className="space-y-2 text-gray-400 text-sm">
-                  <li>
-                    <Link href="#features">Features</Link>
-                  </li>
-                  <li>
-                    <Link href="#how">How it works</Link>
-                  </li>
-                  <li>
-                    <Link href="#pricing">Pricing</Link>
-                  </li>
+                  <li><Link href="#features">Features</Link></li>
+                  <li><Link href="#how">How it works</Link></li>
+                  <li><Link href="#pricing">Pricing</Link></li>
                 </ul>
               </div>
               <div className="w-full md:w-auto">
                 <h4 className="text-white font-semibold mb-4">Company</h4>
                 <ul className="space-y-2 text-gray-400 text-sm">
-                  <li>
-                    <Link href="/about">About</Link>
-                  </li>
-                  <li>
-                    <Link href="/blog">Blog</Link>
-                  </li>
-                  <li>
-                    <Link href="/privacy">Privacy</Link>
-                  </li>
+                  <li><Link href="/about">About</Link></li>
+                  <li><Link href="/blog">Blog</Link></li>
+                  <li><Link href="/privacy">Privacy</Link></li>
                 </ul>
               </div>
               <div className="w-full md:w-auto">
                 <h4 className="text-white font-semibold mb-4">Legal</h4>
                 <ul className="space-y-2 text-gray-400 text-sm">
-                  <li>
-                    <Link href="/terms">Terms</Link>
-                  </li>
-                  <li>
-                    <Link href="/privacy">Privacy</Link>
-                  </li>
+                  <li><Link href="/terms">Terms</Link></li>
+                  <li><Link href="/privacy">Privacy</Link></li>
                 </ul>
               </div>
             </div>
