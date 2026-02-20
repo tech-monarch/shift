@@ -413,7 +413,7 @@ export default function Home() {
               <div className="relative z-10 pl-8">
                 <p className="text-xl text-white/80 italic">
                   “Shift changed how I document my founder journey. I used to spend hours writing threads. Now I just
-                  execute, and AI does the rest. My Twitter engagement doubled in two weeks.”
+                  execute, and AI does the rest. My Twitter engagement doubled in two weeks!!”
                 </p>
                 <div className="mt-6 flex items-center gap-4">
                   <Image
