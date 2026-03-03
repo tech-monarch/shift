@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,10 +10,107 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+interface NavigatorWithApps extends Navigator {
+  getInstalledRelatedApps(): Promise<Array<{ id?: string }>>;
+}
+
+interface DownloadModalProps {
+  showDownloadOptions: boolean;
+  setShowDownloadOptions: (show: boolean) => void;
+  handleDirectDownload: (platform: string) => void;
+  handleWebInstall: () => Promise<void>;
+}
+
+const DownloadModal = ({
+  showDownloadOptions,
+  setShowDownloadOptions,
+  handleDirectDownload,
+  handleWebInstall,
+}: DownloadModalProps) => (
+  <>
+    {showDownloadOptions && (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+        <div className="bg-slate-900 rounded-2xl p-8 max-w-sm w-full border border-white/10 shadow-2xl">
+          <h3 className="text-2xl font-bold text-white mb-2">Download Shift</h3>
+          <p className="text-gray-400 mb-6">Choose your platform:</p>
+
+          <div className="space-y-3 mb-6">
+            <button
+              onClick={() => handleDirectDownload("android")}
+              className="w-full bg-linear-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.6915026,0.192265502 C17.4744206,0.374319727 17.2599494,0.669496334 17.2599494,1.16390756 L17.2599494,21.8360924 C17.2599494,22.3304606 17.4744206,22.5723446 17.6915026,22.8067618 C17.6915026,22.8067618 17.6915026,22.8067618 17.6915026,22.8067618 L4.62171348,22.8067618 C4.40457696,22.8067618 4.18714166,22.6288948 4.18714166,22.1345266 L4.18714166,1.16390756 C4.18714166,0.669496334 4.40457696,0.374319727 4.62171348,0.192265502 C4.62171348,0.192265502 4.62171348,0.192265502 4.62171348,0.192265502 L17.6915026,0.192265502 Z" />
+              </svg>
+              Download for Android (APK)
+            </button>
+
+            <button
+              onClick={() => handleDirectDownload("ios")}
+              className="w-full bg-linear-to-r from-gray-700 to-gray-600 hover:from-gray-800 hover:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.71,19.5c-.83,1.24-1.71,2.45-3.05,2.47-1.34.03-1.77-.79-3.29-.79-1.53,0-2,1.41-3.31.78-1.35-.44-2.76-2.57-3.53-3.8-1.54-2.34-2.5-6.14-.78-8.55,1.5-2.18,4.58-2.35,5.77-.7.39.47.74.1,1.35.27.76.15,1.43-.44,2.15-.44s1.39.6,2.15.45c.61-.17.96.27,1.35-.27,1.19-1.65,4.27-1.49,5.77.7,1.71,2.42.78,6.23-.77,8.55m-11.08-5.53c-.23.73-.7,1.76-1.62,2.03-.52.15-.82-.03-1.42-.03-.64,0-.88.2-1.42.03-.92-.27-1.39-1.3-1.62-2.03-.17,.02-.33.02-.51,.02-1.06,0-1.58-.52-1.99-1.38-.41-.86-.41-2.33,0-3.19.4-.86.93-1.38,1.99-1.38.18,0,.34,.01,.51,.02.23-.72.7-1.76,1.62-2.03.52-.15.82.03,1.42.03.64,0,.88-.2,1.42-.03.91.27,1.38,1.31,1.61,2.03.18-.02.33-.02.51-.02,1.06,0,1.58.52,1.99,1.38.41.86.41,2.33,0,3.19-.4.86-.93,1.38-1.99,1.38-.18,0-.34-.01-.51-.02" />
+              </svg>
+              Download for iOS (App Store)
+            </button>
+
+            <button
+              onClick={() => handleWebInstall()}
+              className="w-full bg-linear-to-r from-orange-600 to-indigo-600 hover:from-orange-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
+              </svg>
+              Install as Web App
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowDownloadOptions(false)}
+            className="w-full text-gray-400 hover:text-gray-300 py-2 rounded-lg transition"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )}
+  </>
+);
+
 export default function Home() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const router = useRouter();
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 
   useEffect(() => {
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((registration) => {
+          console.log("Service Worker registered:", registration);
+        })
+        .catch((error) => {
+          console.log("Service Worker registration failed:", error);
+        });
+    }
+
+    // Check if app is already installed
+    if ("navigator" in window) {
+      const checkInstalled = async () => {
+        if ("getInstalledRelatedApps" in navigator) {
+          const apps = await (
+            navigator as unknown as NavigatorWithApps
+          ).getInstalledRelatedApps();
+          setIsInstalled(apps.length > 0);
+        }
+      };
+      checkInstalled();
+    }
+
     const revealElements = document.querySelectorAll(".reveal");
     if (revealElements.length > 0) {
       const observer = new IntersectionObserver(
@@ -24,7 +122,7 @@ export default function Home() {
             }
           });
         },
-        { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
+        { threshold: 0.15, rootMargin: "0px 0px -50px 0px" },
       );
       revealElements.forEach((el) => observer.observe(el));
     }
@@ -35,12 +133,12 @@ export default function Home() {
         if (window.scrollY > 10) {
           navbar.setAttribute(
             "style",
-            "box-shadow: 0 12px 40px rgba(0,0,0,0.5); background-color: rgba(0, 0, 0, 0.35);"
+            "box-shadow: 0 12px 40px rgba(0,0,0,0.5); background-color: rgba(0, 0, 0, 0.35);",
           );
         } else {
           navbar.setAttribute(
             "style",
-            "box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36); background-color: rgba(0, 0, 0, 0.25);"
+            "box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36); background-color: rgba(0, 0, 0, 0.25);",
           );
         }
       };
@@ -51,26 +149,145 @@ export default function Home() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      console.log("beforeinstallprompt event fired");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    const handleAppInstalled = () => {
+      console.log("PWA installed successfully");
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener("appinstalled", handleAppInstalled);
+
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
   const handleDownload = async () => {
-    if (!deferredPrompt) {
-      alert("To install Shift: \n1. Open in Safari/Chrome \n2. Tap 'Share' or the menu \n3. Select 'Add to Home Screen'");
+    setShowDownloadOptions(true);
+  };
+
+  const showInstallInstructions = () => {
+    const userAgent = navigator.userAgent;
+    let instructions = "";
+
+    if (/iPad|iPhone|iPod/.test(userAgent)) {
+      instructions =
+        "To install Shift on iOS:\n\n1. Tap the Share button (box with arrow)\n2. Scroll down and tap 'Add to Home Screen'\n3. Tap 'Add'\n\nShift will appear as an app on your home screen!";
+    } else if (/Android/.test(userAgent)) {
+      instructions =
+        "To install Shift on Android:\n\n1. Look for the install popup at the bottom\n2. Tap 'Install'\n\nOr tap the menu (⋮) and select 'Install app'.";
+    } else {
+      instructions =
+        "To install Shift:\n\n1. Look for the install icon in your browser's address bar\n2. Tap it and confirm installation\n\nShift will launch as a standalone app!";
+    }
+
+    alert(instructions);
+  };
+
+  const handleDirectDownload = (platform: string) => {
+    const downloadLinks: Record<string, string> = {
+      android: "https://drive.google.com/uc?export=download&id=YOUR_APK_ID", // Replace with actual APK link
+      ios: "https://apps.apple.com/app/shift", // Replace with actual App Store link
+      web: "/api/download-pwa",
+    };
+
+    // Android: try to fetch the APK and force a client-side download
+    if (platform === "android" && downloadLinks.android) {
+      const apkUrl = downloadLinks.android;
+      // Attempt to fetch the APK and create a blob link to force download
+      fetch(apkUrl)
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch APK");
+          return res.blob();
+        })
+        .then((blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "shift.apk";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch((err) => {
+          console.error("Direct APK download failed:", err);
+          // fallback to opening the URL in a new tab
+          window.open(apkUrl, "_blank");
+        })
+        .finally(() => setShowDownloadOptions(false));
+
       return;
     }
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
+
+    // iOS cannot directly download App Store packages from the browser.
+    // Fall back to opening the App Store link.
+    if (platform === "ios" && downloadLinks.ios) {
+      window.open(downloadLinks.ios, "_blank");
+      setShowDownloadOptions(false);
+      return;
+    }
+
+    // Web: if you have an endpoint to serve a packaged PWA, open it; otherwise, trigger install flow
+    if (platform === "web") {
+      handleWebInstall();
+      return;
+    }
+  };
+
+  const handleWebInstall = async () => {
+    // If already installed, just navigate to dashboard
+    if (isInstalled) {
+      router.push("/dashboard");
+      return;
+    }
+
+    // Try the beforeinstallprompt event first
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+
+        if (outcome === "accepted") {
+          console.log("PWA installed successfully");
+          setIsInstalled(true);
+          // Redirect to dashboard after successful installation
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 1000);
+        }
+
+        setDeferredPrompt(null);
+      } catch (error) {
+        console.error("Install error:", error);
+        showInstallInstructions();
+      }
+      setShowDownloadOptions(false);
+      return;
+    }
+
+    // Fallback for iOS and browsers without beforeinstallprompt support
+    showInstallInstructions();
+    setShowDownloadOptions(false);
   };
 
   return (
     <>
+      <DownloadModal
+        showDownloadOptions={showDownloadOptions}
+        setShowDownloadOptions={setShowDownloadOptions}
+        handleDirectDownload={handleDirectDownload}
+        handleWebInstall={handleWebInstall}
+      />
       <style jsx>{`
         .island-nav {
           background: rgba(0, 0, 0, 0.25) !important;
@@ -85,18 +302,29 @@ export default function Home() {
         .reveal {
           opacity: 0;
           transform: translateY(30px);
-          transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1),
+          transition:
+            opacity 0.8s cubic-bezier(0.2, 0.9, 0.3, 1),
             transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
         }
         .reveal.revealed {
           opacity: 1;
           transform: translateY(0);
         }
-        .delay-1 { transition-delay: 0.1s; }
-        .delay-2 { transition-delay: 0.2s; }
-        .delay-3 { transition-delay: 0.3s; }
-        .delay-4 { transition-delay: 0.4s; }
-        .delay-5 { transition-delay: 0.5s; }
+        .delay-1 {
+          transition-delay: 0.1s;
+        }
+        .delay-2 {
+          transition-delay: 0.2s;
+        }
+        .delay-3 {
+          transition-delay: 0.3s;
+        }
+        .delay-4 {
+          transition-delay: 0.4s;
+        }
+        .delay-5 {
+          transition-delay: 0.5s;
+        }
         .glass-card {
           background: rgba(10, 10, 20, 0.3) !important;
           backdrop-filter: blur(8px) saturate(160%) !important;
@@ -117,8 +345,13 @@ export default function Home() {
           background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L25 15 Z' fill='%23f97316' opacity='0.03'/%3E%3C/svg%3E");
         }
         .bg-grid {
-          background-image: linear-gradient(rgba(249, 115, 22, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(249, 115, 22, 0.03) 1px, transparent 1px);
+          background-image:
+            linear-gradient(rgba(249, 115, 22, 0.03) 1px, transparent 1px),
+            linear-gradient(
+              90deg,
+              rgba(249, 115, 22, 0.03) 1px,
+              transparent 1px
+            );
           background-size: 40px 40px;
         }
         .phone-frame {
@@ -140,21 +373,30 @@ export default function Home() {
         <header className="fixed top-4 left-1/2 transform -translate-x-1/2 w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-6xl z-50">
           <div className="island-nav flex items-center justify-between px-4 py-2 md:px-6">
             <div className="w-auto logo">
-              <Link href="/" className="text-2xl font-bold text-white tracking-tight">
+              <Link
+                href="/"
+                className="text-2xl font-bold text-white tracking-tight"
+              >
                 SHIFT<span className="text-orange-500">.</span>
               </Link>
             </div>
             <div className="flex items-center gap-4">
               <nav className="hidden lg:block">
                 <ul className="flex items-center gap-6 text-sm md:text-base text-white/80">
-                  <li><Link href="#features">Features</Link></li>
-                  <li><Link href="#how">How it works</Link></li>
-                  <li><Link href="#pricing">Pricing</Link></li>
+                  <li>
+                    <Link href="#features">Features</Link>
+                  </li>
+                  <li>
+                    <Link href="#how">How it works</Link>
+                  </li>
+                  <li>
+                    <Link href="#pricing">Pricing</Link>
+                  </li>
                 </ul>
               </nav>
               <button
                 onClick={handleDownload}
-                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-indigo-600 rounded-full hover:scale-105 transition"
+                className="px-4 py-2 text-sm font-medium text-white bg-linear-to-r from-orange-600 to-indigo-600 rounded-full hover:scale-105 transition"
               >
                 Download App
               </button>
@@ -165,13 +407,35 @@ export default function Home() {
         {/* Main content */}
         <div>
           {/* Hero section with phone-styled screenshot */}
-          <section className="relative reveal" style={{ transitionDelay: "0.1s" }}>
+          <section
+            className="relative reveal"
+            style={{ transitionDelay: "0.1s" }}
+          >
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <svg className="absolute top-32 left-0 w-96 h-96 text-orange-500/5" viewBox="0 0 200 200" fill="none">
-                <path d="M100 0 L200 100 L100 200 L0 100 Z" stroke="currentColor" strokeWidth="2" fill="none" />
+              <svg
+                className="absolute top-32 left-0 w-96 h-96 text-orange-500/5"
+                viewBox="0 0 200 200"
+                fill="none"
+              >
+                <path
+                  d="M100 0 L200 100 L100 200 L0 100 Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
               </svg>
-              <svg className="absolute bottom-0 right-0 w-96 h-96 text-indigo-500/5 transform rotate-45" viewBox="0 0 200 200">
-                <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="2" fill="none" />
+              <svg
+                className="absolute bottom-0 right-0 w-96 h-96 text-indigo-500/5 transform rotate-45"
+                viewBox="0 0 200 200"
+              >
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="80"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
               </svg>
               <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl"></div>
             </div>
@@ -181,20 +445,21 @@ export default function Home() {
                 <div className="w-full lg:w-1/2 px-4">
                   <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
                     Show Up for Your{" "}
-                    <span className="bg-gradient-to-r from-orange-400 to-indigo-400 bg-clip-text text-transparent">
+                    <span className="bg-linear-to-r from-orange-400 to-indigo-400 bg-clip-text text-transparent">
                       Future
                     </span>{" "}
                     Self.
                   </h1>
                   <p className="mt-6 text-xl text-gray-300 max-w-xl">
-                    Shift is the productivity enforcement engine for founders, Students and Hustlers. Complete one daily
-                    task, and AI turns your execution into Twitter/X posts, LinkedIn articles, Instagram captions, and
-                    short‑form video scripts.
+                    Shift is the productivity enforcement engine for founders,
+                    Students and Hustlers. Complete one daily task, and AI turns
+                    your execution into Twitter/X posts, LinkedIn articles,
+                    Instagram captions, and short‑form video scripts.
                   </p>
                   <div className="mt-8 flex flex-wrap gap-4">
                     <button
                       onClick={handleDownload}
-                      className="px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-orange-600 to-indigo-600 rounded-xl hover:scale-105 transition"
+                      className="px-8 py-4 text-lg font-semibold text-white bg-linear-to-r from-orange-600 to-indigo-600 rounded-xl hover:scale-105 transition"
                     >
                       Get Shift – It&apos;s Free
                     </button>
@@ -205,7 +470,9 @@ export default function Home() {
                       Get Started
                     </Link>
                   </div>
-                  <p className="mt-4 text-sm text-gray-400">No credit card. PWA installs in seconds.</p>
+                  <p className="mt-4 text-sm text-gray-400">
+                    No credit card. PWA installs in seconds.
+                  </p>
                 </div>
 
                 {/* Phone mockup */}
@@ -229,19 +496,24 @@ export default function Home() {
           </section>
 
           {/* Features section (unchanged) */}
-          <section className="relative container px-4 mx-auto max-w-7xl mt-32 reveal delay-2" id="features">
+          <section
+            className="relative container px-4 mx-auto max-w-7xl mt-32 reveal delay-2"
+            id="features"
+          >
             <div className="absolute inset-0 pointer-events-none bg-arrow-pattern opacity-20"></div>
             <div className="absolute top-20 left-10 w-40 h-40 border border-orange-500/10 rounded-full"></div>
 
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-white">
-                From Execution to<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-indigo-400">
+                From Execution to
+                <br />
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-400 to-indigo-400">
                   Distribution in One Click
                 </span>
               </h2>
               <p className="mt-4 text-gray-300 text-lg">
-                Stop documenting manually. Let AI turn your daily work into content that builds your brand.
+                Stop documenting manually. Let AI turn your daily work into
+                content that builds your brand.
               </p>
             </div>
 
@@ -249,35 +521,46 @@ export default function Home() {
               <div className="glass-card p-8 rounded-2xl reveal delay-3 relative">
                 <div className="absolute -top-4 -right-4 w-12 h-12 bg-orange-500/10 rounded-full blur-md"></div>
                 <div className="text-4xl mb-4">🔒</div>
-                <h3 className="text-2xl font-semibold text-white mb-3">Lock‑In System</h3>
+                <h3 className="text-2xl font-semibold text-white mb-3">
+                  Lock‑In System
+                </h3>
                 <p className="text-gray-400">
-                  Set one non‑negotiable task each day. Build streaks that matter. Your commitment score grows with every
-                  execution.
+                  Set one non‑negotiable task each day. Build streaks that
+                  matter. Your commitment score grows with every execution.
                 </p>
               </div>
               <div className="glass-card p-8 rounded-2xl reveal delay-4 relative">
                 <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-indigo-500/10 rounded-full blur-lg"></div>
                 <div className="text-4xl mb-4">🤖</div>
-                <h3 className="text-2xl font-semibold text-white mb-3">AI Content Engine</h3>
+                <h3 className="text-2xl font-semibold text-white mb-3">
+                  AI Content Engine
+                </h3>
                 <p className="text-gray-400">
-                  Complete your task → Gemini instantly writes X posts, LinkedIn articles, Instagram captions, and a
-                  30‑second video script.
+                  Complete your task → Gemini instantly writes X posts, LinkedIn
+                  articles, Instagram captions, and a 30‑second video script.
                 </p>
               </div>
               <div className="glass-card p-8 rounded-2xl reveal delay-5 relative">
                 <div className="absolute top-1/2 -right-6 w-20 h-20 border border-orange-500/10 rounded-full"></div>
                 <div className="text-4xl mb-4">🌐</div>
-                <h3 className="text-2xl font-semibold text-white mb-3">Public Profile</h3>
+                <h3 className="text-2xl font-semibold text-white mb-3">
+                  Public Profile
+                </h3>
                 <p className="text-gray-400">
-                  Share your journey at <span className="text-orange-400">shift.app/you</span>. Display your streak,
-                  commitment score, and last 5 posts – proof you execute.
+                  Share your journey at{" "}
+                  <span className="text-orange-400">shift.app/you</span>.
+                  Display your streak, commitment score, and last 5 posts –
+                  proof you execute.
                 </p>
               </div>
             </div>
           </section>
 
           {/* How it works section with phone-styled AI screenshot */}
-          <section className="relative container px-4 mx-auto max-w-7xl mt-32 reveal delay-2" id="how">
+          <section
+            className="relative container px-4 mx-auto max-w-7xl mt-32 reveal delay-2"
+            id="how"
+          >
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -287,7 +570,9 @@ export default function Home() {
             ></div>
 
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-white">One Button. Infinite Output.</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-white">
+                One Button. Infinite Output.
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -297,8 +582,13 @@ export default function Home() {
                     1
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Lock In</h3>
-                    <p className="text-gray-400">Define your one daily task – the one thing that moves the needle.</p>
+                    <h3 className="text-xl font-semibold text-white">
+                      Lock In
+                    </h3>
+                    <p className="text-gray-400">
+                      Define your one daily task – the one thing that moves the
+                      needle.
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -306,9 +596,12 @@ export default function Home() {
                     2
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Execute & Mark Done</h3>
+                    <h3 className="text-xl font-semibold text-white">
+                      Execute & Mark Done
+                    </h3>
                     <p className="text-gray-400">
-                      Crush it, then hit “I Executed Today”. Your streak updates instantly.
+                      Crush it, then hit “I Executed Today”. Your streak updates
+                      instantly.
                     </p>
                   </div>
                 </div>
@@ -317,9 +610,12 @@ export default function Home() {
                     3
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">AI Generates Everything</h3>
+                    <h3 className="text-xl font-semibold text-white">
+                      AI Generates Everything
+                    </h3>
                     <p className="text-gray-400">
-                      X post, LinkedIn article, IG caption, and a 30‑second video script – all tailored to your task.
+                      X post, LinkedIn article, IG caption, and a 30‑second
+                      video script – all tailored to your task.
                     </p>
                   </div>
                 </div>
@@ -328,9 +624,12 @@ export default function Home() {
                     4
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Copy, Edit, Publish</h3>
+                    <h3 className="text-xl font-semibold text-white">
+                      Copy, Edit, Publish
+                    </h3>
                     <p className="text-gray-400">
-                      Tweak if you want, then share everywhere. Your public profile updates automatically.
+                      Tweak if you want, then share everywhere. Your public
+                      profile updates automatically.
                     </p>
                   </div>
                 </div>
@@ -338,7 +637,7 @@ export default function Home() {
 
               {/* Phone mockup for AI output */}
               <div className="max-w-xs mx-auto">
-                <div className="absolute -top-5 -left-5 w-24 h-24 bg-gradient-to-br from-orange-600/10 to-indigo-600/10 rounded-full blur-2xl"></div>
+                <div className="absolute -top-5 -left-5 w-24 h-24 bg-linear-to-br from-orange-600/10 to-indigo-600/10 rounded-full blur-2xl"></div>
                 <div className="phone-frame">
                   <Image
                     src="/images/ai.jpeg"
@@ -348,7 +647,9 @@ export default function Home() {
                     className="w-full h-auto"
                   />
                 </div>
-                <p className="text-center text-sm text-white/50 mt-2">Demo – actual AI output</p>
+                <p className="text-center text-sm text-white/50 mt-2">
+                  Demo – actual AI output
+                </p>
               </div>
             </div>
           </section>
@@ -356,28 +657,48 @@ export default function Home() {
           {/* Statistics */}
           <section className="relative container px-4 mx-auto max-w-5xl mt-32 reveal delay-3">
             <div className="absolute inset-0 pointer-events-none flex justify-center items-center">
-              <svg className="w-full h-full text-orange-500/5" viewBox="0 0 400 200" preserveAspectRatio="none">
-                <path d="M0 150 L100 50 L200 120 L300 30 L400 80" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path d="M0 170 L100 80 L200 140 L300 60 L400 100" stroke="currentColor" strokeWidth="2" fill="none" />
+              <svg
+                className="w-full h-full text-orange-500/5"
+                viewBox="0 0 400 200"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d="M0 150 L100 50 L200 120 L300 30 L400 80"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  d="M0 170 L100 80 L200 140 L300 60 L400 100"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
               </svg>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div>
-                <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-indigo-400">
+                <div className="text-5xl font-bold text-transparent bg-clip-text bg-linear-to-r from-orange-400 to-indigo-400">
                   87%
                 </div>
-                <div className="text-xl text-white mt-2">Higher Consistency</div>
-                <p className="text-gray-400 text-sm mt-1">Users report sticking to goals longer</p>
+                <div className="text-xl text-white mt-2">
+                  Higher Consistency
+                </div>
+                <p className="text-gray-400 text-sm mt-1">
+                  Users report sticking to goals longer
+                </p>
               </div>
               <div>
-                <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-indigo-400">
+                <div className="text-5xl font-bold text-transparent bg-clip-text bg-linear-to-r from-orange-400 to-indigo-400">
                   10x
                 </div>
                 <div className="text-xl text-white mt-2">Content Output</div>
-                <p className="text-gray-400 text-sm mt-1">Without extra effort</p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Without extra effort
+                </p>
               </div>
               <div>
-                <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-indigo-400">
+                <div className="text-5xl font-bold text-transparent bg-clip-text bg-linear-to-r from-orange-400 to-indigo-400">
                   🔥 50+
                 </div>
                 <div className="text-xl text-white mt-2">Longest Streak</div>
@@ -387,21 +708,28 @@ export default function Home() {
           </section>
 
           {/* Pricing / CTA */}
-          <div className="relative container px-4 mx-auto max-w-5xl mt-32 reveal" id="pricing">
+          <div
+            className="relative container px-4 mx-auto max-w-5xl mt-32 reveal"
+            id="pricing"
+          >
             <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-              <span className="text-[15rem] font-black text-white/5 select-none">SHIFT</span>
+              <span className="text-[15rem] font-black text-white/5 select-none">
+                SHIFT
+              </span>
             </div>
             <div className="glass-card p-12 rounded-3xl text-center relative">
               <h2 className="text-4xl font-bold text-white mb-4">
-                Start Building in Public – <span className="text-orange-400">Free</span>
+                Start Building in Public –{" "}
+                <span className="text-orange-400">Free</span>
               </h2>
               <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-                Shift is free during beta. Install the PWA, lock in your first task, and let AI amplify your work.
+                Shift is free during beta. Install the PWA, lock in your first
+                task, and let AI amplify your work.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <button
                   onClick={handleDownload}
-                  className="px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-orange-600 to-indigo-600 rounded-xl hover:scale-105 transition"
+                  className="px-8 py-4 text-lg font-semibold text-white bg-linear-to-r from-orange-600 to-indigo-600 rounded-xl hover:scale-105 transition"
                 >
                   Download Shift
                 </button>
@@ -409,20 +737,27 @@ export default function Home() {
                   See Example Profile
                 </button>
               </div>
-              <p className="mt-4 text-sm text-gray-400">No credit card. No subscription. Ever.</p>
+              <p className="mt-4 text-sm text-gray-400">
+                No credit card. No subscription. Ever.
+              </p>
             </div>
           </div>
 
           {/* Testimonial */}
           <section className="container px-4 mx-auto max-w-4xl mt-32 reveal">
             <div className="glass-panel p-8 rounded-3xl relative">
-              <svg className="absolute top-4 left-4 w-12 h-12 text-white/5" fill="currentColor" viewBox="0 0 32 32">
+              <svg
+                className="absolute top-4 left-4 w-12 h-12 text-white/5"
+                fill="currentColor"
+                viewBox="0 0 32 32"
+              >
                 <path d="M10 8c-3.3 0-6 2.7-6 6v10h10V14H8c0-2.2 1.8-4 4-4V8zm16 0c-3.3 0-6 2.7-6 6v10h10V14h-6c0-2.2 1.8-4 4-4V8z" />
               </svg>
               <div className="relative z-10 pl-8">
                 <p className="text-xl text-white/80 italic">
-                  “Shift changed how I document my founder journey. I used to spend hours writing threads. Now I just
-                  execute, and AI does the rest. My Twitter engagement doubled in two weeks.”
+                  “Shift changed how I document my founder journey. I used to
+                  spend hours writing threads. Now I just execute, and AI does
+                  the rest. My Twitter engagement doubled in two weeks.”
                 </p>
                 <div className="mt-6 flex items-center gap-4">
                   <Image
@@ -433,7 +768,9 @@ export default function Home() {
                     className="rounded-full"
                   />
                   <div>
-                    <p className="font-semibold text-white">Omijeh David Odianonsen (Odia)</p>
+                    <p className="font-semibold text-white">
+                      Omijeh David Odianonsen (Odia)
+                    </p>
                     <p className="text-sm text-gray-400">Solo Builder</p>
                   </div>
                 </div>
@@ -448,7 +785,7 @@ export default function Home() {
             className="absolute bottom-0 left-0 w-full h-16 opacity-5"
             style={{
               backgroundImage:
-                'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1440 320\'%3E%3Cpath fill=\'%23f97316\' d=\'M0,160L48,176C96,192,192,224,288,218.7C384,213,480,171,576,149.3C672,128,768,128,864,149.3C960,171,1056,213,1152,218.7C1248,224,1344,192,1392,176L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z\'%3E%3C/path%3E%3C/svg%3E")',
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23f97316' d='M0,160L48,176C96,192,192,224,288,218.7C384,213,480,171,576,149.3C672,128,768,128,864,149.3C960,171,1056,213,1152,218.7C1248,224,1344,192,1392,176L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E\")",
               backgroundRepeat: "repeat-x",
               backgroundSize: "auto 100%",
             }}
@@ -459,10 +796,12 @@ export default function Home() {
                 <div className="text-2xl font-bold text-white">
                   SHIFT<span className="text-orange-500">.</span>
                 </div>
-                <p className="mt-4 text-gray-400 text-sm">Execute → AI converts it → You publish everywhere.</p>
+                <p className="mt-4 text-gray-400 text-sm">
+                  Execute → AI converts it → You publish everywhere.
+                </p>
                 <button
                   onClick={handleDownload}
-                  className="mt-6 px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-indigo-600 rounded-full"
+                  className="mt-6 px-5 py-2 text-sm font-medium text-white bg-linear-to-r from-orange-600 to-indigo-600 rounded-full"
                 >
                   Download App
                 </button>
@@ -470,24 +809,40 @@ export default function Home() {
               <div className="w-full md:w-auto">
                 <h4 className="text-white font-semibold mb-4">Product</h4>
                 <ul className="space-y-2 text-gray-400 text-sm">
-                  <li><Link href="#features">Features</Link></li>
-                  <li><Link href="#how">How it works</Link></li>
-                  <li><Link href="#pricing">Pricing</Link></li>
+                  <li>
+                    <Link href="#features">Features</Link>
+                  </li>
+                  <li>
+                    <Link href="#how">How it works</Link>
+                  </li>
+                  <li>
+                    <Link href="#pricing">Pricing</Link>
+                  </li>
                 </ul>
               </div>
               <div className="w-full md:w-auto">
                 <h4 className="text-white font-semibold mb-4">Company</h4>
                 <ul className="space-y-2 text-gray-400 text-sm">
-                  <li><Link href="/about">About</Link></li>
-                  <li><Link href="/blog">Blog</Link></li>
-                  <li><Link href="/privacy">Privacy</Link></li>
+                  <li>
+                    <Link href="/about">About</Link>
+                  </li>
+                  <li>
+                    <Link href="/blog">Blog</Link>
+                  </li>
+                  <li>
+                    <Link href="/privacy">Privacy</Link>
+                  </li>
                 </ul>
               </div>
               <div className="w-full md:w-auto">
                 <h4 className="text-white font-semibold mb-4">Legal</h4>
                 <ul className="space-y-2 text-gray-400 text-sm">
-                  <li><Link href="/terms">Terms</Link></li>
-                  <li><Link href="/privacy">Privacy</Link></li>
+                  <li>
+                    <Link href="/terms">Terms</Link>
+                  </li>
+                  <li>
+                    <Link href="/privacy">Privacy</Link>
+                  </li>
                 </ul>
               </div>
             </div>
